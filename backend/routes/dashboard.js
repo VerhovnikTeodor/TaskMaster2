@@ -1,5 +1,5 @@
 const express = require('express');
-const { tasks, projects, users } = require('../data/store');
+const { tasks, projects, users, comments } = require('../data/store');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -30,6 +30,13 @@ router.get('/stats', (req, res) => {
     inProgress: myTasks.filter(t => t.status === 'IN_PROGRESS').length,
     done: myTasks.filter(t => t.status === 'DONE').length
   };
+
+  // Statistika komentarjev
+  const myComments = comments.filter(c => c.authorId === userId);
+  const totalComments = comments.filter(c => {
+    const task = tasks.find(t => t.id === c.taskId);
+    return task && projectIds.includes(task.projectId);
+  });
 
   // Statistika projektov
   const projectStats = {
@@ -67,6 +74,10 @@ router.get('/stats', (req, res) => {
   res.json({
     taskStats,
     projectStats,
+    commentStats: {
+      myComments: myComments.length,
+      totalComments: totalComments.length
+    },
     recentActivity: recentTasks
   });
 });

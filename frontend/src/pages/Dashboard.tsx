@@ -107,6 +107,16 @@ const Dashboard: React.FC = () => {
             <span>Zaključene naloge</span>
           </div>
         </div>
+
+        <div className="stat-card">
+          <h3>💬 Komentarji</h3>
+          <div className="stat-number" style={{ color: '#667eea' }}>
+            {stats?.commentStats.myComments || 0}
+          </div>
+          <div className="stat-details">
+            <span>Skupaj: {stats?.commentStats.totalComments || 0}</span>
+          </div>
+        </div>
       </div>
 
       <div className="dashboard-content">
