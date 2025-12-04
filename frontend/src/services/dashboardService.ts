@@ -13,6 +13,11 @@ export interface ProjectStats {
   member: number;
 }
 
+export interface CommentStats {
+  myComments: number;
+  totalComments: number;
+}
+
 export interface RecentActivity {
   id: string;
   title: string;
@@ -33,6 +38,7 @@ export interface RecentActivity {
 export interface DashboardStats {
   taskStats: TaskStats;
   projectStats: ProjectStats;
+  commentStats: CommentStats;
   recentActivity: RecentActivity[];
 }
 

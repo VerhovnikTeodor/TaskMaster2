@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { projectService, Project } from '../services/projectService';
 import { taskService, Task, TaskStatus } from '../services/taskService';
 import { useAuth } from '../context/AuthContext';
+import Comments from '../components/Comments';
 import '../styles/ProjectDetail.css';
 
 const ProjectDetail: React.FC = () => {
@@ -11,6 +12,7 @@ const ProjectDetail: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [selectedTaskForComments, setSelectedTaskForComments] = useState<string | null>(null);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -167,6 +169,15 @@ const ProjectDetail: React.FC = () => {
                     </div>
                   )}
                   <div className="task-actions">
+                    <button
+                      onClick={() => setSelectedTaskForComments(
+                        selectedTaskForComments === task.id ? null : task.id
+                      )}
+                      className="btn btn-xs btn-comment"
+                      title="Komentarji"
+                    >
+                      💬
+                    </button>
                     {status !== 'TODO' && (
                       <button
                         onClick={() => handleStatusChange(task.id, status === 'IN_PROGRESS' ? 'TODO' : 'IN_PROGRESS')}
@@ -192,6 +203,9 @@ const ProjectDetail: React.FC = () => {
                       </button>
                     )}
                   </div>
+                  {selectedTaskForComments === task.id && (
+                    <Comments taskId={task.id} projectOwnerId={project.ownerId} />
+                  )}
                 </div>
               ))}
             </div>

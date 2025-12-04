@@ -141,3 +141,13 @@
   padding: 6px 12px;
   font-size: 12px;
 }
+
+.btn-comment {
+  background: #667eea;
+  color: white;
+  border: none;
+}
+
+.btn-comment:hover {
+  background: #5568d3;
+}

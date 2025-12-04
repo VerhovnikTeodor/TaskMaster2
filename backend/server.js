@@ -14,6 +14,7 @@ const authRoutes = require('./routes/auth');
 const projectRoutes = require('./routes/projects');
 const taskRoutes = require('./routes/tasks');
 const dashboardRoutes = require('./routes/dashboard');
+const commentRoutes = require('./routes/comments');
 
 // Osnovni route
 app.get('/', (req, res) => {
@@ -24,7 +25,8 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       projects: '/api/projects',
       tasks: '/api/tasks',
-      dashboard: '/api/dashboard'
+      dashboard: '/api/dashboard',
+      comments: '/api/comments'
     }
   });
 });
@@ -34,6 +36,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/comments', commentRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
