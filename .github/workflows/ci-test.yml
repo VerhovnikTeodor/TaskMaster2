@@ -1,0 +1,59 @@
+name: CI/CD Pipeline - Testing
+
+on:
+  push:
+    branches: [ main, develop, feature/** ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Backend Testing
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install and test
+        working-directory: ./backend
+        run: |
+          npm ci
+          npm test
+      
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage/
+          retention-days: 30
+
+  # Frontend Testing
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install and test
+        working-directory: ./frontend
+        run: |
+          npm ci
+          CI=true npm run test:coverage
+      
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 30
+
