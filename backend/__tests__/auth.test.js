@@ -3,14 +3,13 @@ const express = require('express');
 const authRoutes = require('../routes/auth');
 const { users } = require('../data/store');
 
-// Nastavitev Express app za testiranje
+
 const app = express();
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 
 describe('Authentication Routes', () => {
   beforeEach(() => {
-    // Počisti uporabnike pred vsakim testom
     users.length = 0;
   });
 
@@ -46,10 +45,10 @@ describe('Authentication Routes', () => {
         lastName: 'User'
       };
 
-      // Prvi register
+ 
       await request(app).post('/api/auth/register').send(user);
 
-      // Drugi register z istim emailom
+ 
       const response = await request(app)
         .post('/api/auth/register')
         .send(user)

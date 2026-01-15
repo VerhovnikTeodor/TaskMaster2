@@ -5,13 +5,13 @@ const taskRoutes = require('../routes/tasks');
 const { tasks, projects, users } = require('../data/store');
 const { authenticateToken } = require('../middleware/auth');
 
-// Nastavitev Express app za testiranje
+
 const app = express();
 app.use(express.json());
 app.use(authenticateToken);
 app.use('/api/tasks', taskRoutes);
 
-// Helper funkcija za generiranje testnega tokena
+
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET || 'taskmaster_secret_key_2024', { expiresIn: '7d' });
 };
@@ -22,12 +22,11 @@ describe('Task Routes', () => {
   let testProject;
 
   beforeEach(() => {
-    // Počisti podatke
     tasks.length = 0;
     projects.length = 0;
     users.length = 0;
 
-    // Ustvari testnega uporabnika
+   
     testUser = {
       id: 'user-test-1',
       email: 'test@example.com',
@@ -37,7 +36,7 @@ describe('Task Routes', () => {
     users.push(testUser);
     authToken = generateToken(testUser.id);
 
-    // Ustvari testni projekt
+ 
     testProject = {
       id: 'project-1',
       name: 'Test Project',
@@ -109,7 +108,7 @@ describe('Task Routes', () => {
 
   describe('GET /api/tasks/project/:projectId', () => {
     beforeEach(() => {
-      // Dodaj testne naloge
+     
       tasks.push({
         id: 'task-1',
         title: 'Task 1',
