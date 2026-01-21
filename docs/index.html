@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskMaster2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 50px;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #764ba2;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .team-members {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .member {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+        
+        .member:hover {
+            transform: translateY(-5px);
+        }
+        
+        .description {
+            color: #444;
+            line-height: 1.8;
+            font-size: 1.1em;
+            text-align: justify;
+        }
+        
+        .badges {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .badge {
+            background: #f0f0f0;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .links {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 10px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #999;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TaskMaster</h1>
+        <p class="subtitle">Sistem za upravljanje projektov in nalog</p>
+        
+        <div class="section">
+            <h2>👥 Člani ekipe</h2>
+            <div class="team-members">
+                <div class="member">Teodor Verhovnik</div>
+
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📝 Opis projekta</h2>
+            <p class="description">
+                TaskMaster2 je moderna aplikacija za upravljanje projektov in nalog, zasnovana za 
+                enostavno sodelovanje ekip. Aplikacija omogoča ustvarjanje projektov, dodajanje nalog, 
+                dodeljevanje ekipnih članov, sledenje napredku in komentiranje. 
+            </p>
+            <p class="description" style="margin-top: 15px;">
+                Projekt vključuje frontend (React + TypeScript), backend (Node.js + Express) in popoln 
+                CI/CD pipeline z avtomatskim testiranjem, gradnjo Docker slik, deployment na Render in 
+                GitHub Pages za dokumentacijo.
+            </p>
+        </div>
+        
+        <div class="section">
+            <h2>🛠️ Tehnologije</h2>
+            <div class="badges">
+                <span class="badge">React</span>
+                <span class="badge">TypeScript</span>
+                <span class="badge">Node.js</span>
+                <span class="badge">Express</span>
+                <span class="badge">Docker</span>
+                <span class="badge">GitHub Actions</span>
+                <span class="badge">Jest</span>
+                <span class="badge">Render</span>
+            </div>
+        </div>
+        
+        <div class="links">
+            <a href="https://github.com/VerhovnikTeodor/TaskMaster2" class="btn" target="_blank">
+                📦 GitHub Repository
+            </a>
+            <a href="https://hub.docker.com" class="btn" target="_blank">
+                🐳 Docker Hub
+            </a>
+        </div>
+        
+        <footer>
+            <p>&copy; 2026 TaskMaster2 Team | RIRS Project</p>
+        </footer>
+    </div>
+</body>
+</html>
