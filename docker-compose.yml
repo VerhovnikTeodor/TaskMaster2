@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - JWT_SECRET=taskmaster_secret_key_change_this_in_production
+      - NODE_ENV=production
+    networks:
+      - taskmaster-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3010:3010"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8001/api
+    depends_on:
+      - backend
+    networks:
+      - taskmaster-network
+
+networks:
+  taskmaster-network:
+    driver: bridge
