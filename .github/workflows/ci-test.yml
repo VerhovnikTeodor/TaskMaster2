@@ -29,7 +29,7 @@ jobs:
           node-version: '18'
       
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v4.2.0
         with:
           path: backend/node_modules
           key: backend-node-${{ hashFiles('backend/package-lock.json') }}
@@ -60,7 +60,7 @@ jobs:
           node-version: '20'
       
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v4.2.0
         with:
           path: frontend/node_modules
           key: frontend-node-${{ hashFiles('frontend/package-lock.json') }}
@@ -130,7 +130,7 @@ jobs:
           node-version: '18'
       
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v4.2.0
         with:
           path: backend/node_modules
           key: backend-node-${{ hashFiles('backend/package-lock.json') }}
@@ -163,7 +163,7 @@ jobs:
           node-version: '20'
       
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v4.2.0
         with:
           path: frontend/node_modules
           key: frontend-node-${{ hashFiles('frontend/package-lock.json') }}
