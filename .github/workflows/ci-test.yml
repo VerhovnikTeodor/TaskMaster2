@@ -16,7 +16,7 @@ env:
 
 jobs:
 
-  # ==================== TEST FAZA ====================
+  # TEST FAZA
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
@@ -79,7 +79,7 @@ jobs:
           path: frontend/coverage/
           retention-days: 30
 
-  # ==================== SONARCLOUD ANALYSIS ====================
+  # SONARCLOUD ANALYSIS 
   sonarcloud:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
@@ -186,7 +186,7 @@ jobs:
           path: frontend/build/
           retention-days: 30
 
-  # ==================== DOCKER BUILD FAZA ====================
+  # DOCKER BUILD FAZA 
   docker-build-dev:
     name: Build Docker Images (Development)
     runs-on: ubuntu-latest
@@ -299,7 +299,7 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/taskmaster-frontend:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/taskmaster-frontend:buildcache,mode=max
 
-  # ==================== DEPLOY FAZA ====================
+  #  DEPLOY FAZA 
   deploy-dev:
     name: Deploy to Render (Development)
     runs-on: ubuntu-latest
@@ -352,7 +352,7 @@ jobs:
           echo "Backend image: ${{ secrets.DOCKER_USERNAME }}/taskmaster-backend:prod-${{ github.sha }}"
           echo "Frontend image: ${{ secrets.DOCKER_USERNAME }}/taskmaster-frontend:prod-${{ github.sha }}"
 
-  # ==================== GITHUB PAGES DEPLOY ====================
+  # GITHUB PAGES DEPLOY 
   deploy-pages:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
