@@ -5,6 +5,7 @@ on:
     branches: [ main, develop, feature/** ]
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
 
 env:
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -37,7 +38,7 @@ jobs:
       - name: Install and test
         working-directory: ./backend
         run: |
-          npm ci
+          npm install
           npm test
       
       - name: Upload coverage
@@ -100,7 +101,7 @@ jobs:
       
       - name: Install dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
       
       - name: Upload backend build artifact
         uses: actions/upload-artifact@v4
@@ -133,7 +134,7 @@ jobs:
       
       - name: Install dependencies
         working-directory: ./frontend
-        run: npm ci
+        run: npm install
       
       - name: Build frontend
         working-directory: ./frontend
