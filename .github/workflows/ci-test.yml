@@ -103,17 +103,18 @@ jobs:
           path: frontend/coverage/
       
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v4
+        uses: SonarSource/sonarqube-scan-action@v4.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
       
       - name: SonarCloud Quality Gate check
-        uses: sonarsource/sonarqube-quality-gate-action@v1.1
+        uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        continue-on-error: false
+          SONAR_HOST_URL: https://sonarcloud.io
 
   # ==================== BUILD FAZA ====================
   build-backend:
