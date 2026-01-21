@@ -5,13 +5,13 @@ const projectRoutes = require('../routes/projects');
 const { projects, users } = require('../data/store');
 const { authenticateToken } = require('../middleware/auth');
 
-// Nastavitev Express app za testiranje
+
 const app = express();
 app.use(express.json());
 app.use(authenticateToken);
 app.use('/api/projects', projectRoutes);
 
-// Helper funkcija za generiranje testnega tokena
+
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET || 'taskmaster_secret_key_2024', { expiresIn: '7d' });
 };
@@ -21,11 +21,11 @@ describe('Project Routes', () => {
   let authToken;
 
   beforeEach(() => {
-    // Počisti podatke
+
     projects.length = 0;
     users.length = 0;
 
-    // Ustvari testnega uporabnika
+   
     testUser = {
       id: 'user-test-1',
       email: 'test@example.com',
@@ -88,7 +88,7 @@ describe('Project Routes', () => {
 
   describe('GET /api/projects', () => {
     beforeEach(() => {
-      // Dodaj testne projekte
+    
       projects.push({
         id: 'project-1',
         name: 'My Project',

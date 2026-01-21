@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+coverage
+.git
+.gitignore
+.env
+.env.local
+.env.*.local
+__tests__
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+.DS_Store
+README.md
+src/setupTests.ts
