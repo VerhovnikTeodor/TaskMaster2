@@ -29,7 +29,7 @@ jobs:
           node-version: '18'
       
       - name: Cache node_modules
-        uses: actions/cache@v4.2.0
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a
         with:
           path: backend/node_modules
           key: backend-node-${{ hashFiles('backend/package-lock.json') }}
@@ -60,7 +60,7 @@ jobs:
           node-version: '20'
       
       - name: Cache node_modules
-        uses: actions/cache@v4.2.0
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a
         with:
           path: frontend/node_modules
           key: frontend-node-${{ hashFiles('frontend/package-lock.json') }}
@@ -103,14 +103,14 @@ jobs:
           path: frontend/coverage/
       
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v4.1.0
+        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
       
       - name: SonarCloud Quality Gate check
-        uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
+        uses: SonarSource/sonarqube-quality-gate-action@cf038b0e0cdecfa9e56c198bbb7d21d751d62c3b
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -130,7 +130,7 @@ jobs:
           node-version: '18'
       
       - name: Cache node_modules
-        uses: actions/cache@v4.2.0
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a
         with:
           path: backend/node_modules
           key: backend-node-${{ hashFiles('backend/package-lock.json') }}
@@ -163,7 +163,7 @@ jobs:
           node-version: '20'
       
       - name: Cache node_modules
-        uses: actions/cache@v4.2.0
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a
         with:
           path: frontend/node_modules
           key: frontend-node-${{ hashFiles('frontend/package-lock.json') }}
