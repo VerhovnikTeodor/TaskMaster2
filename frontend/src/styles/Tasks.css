@@ -79,6 +79,15 @@
   margin-top: 15px;
 }
 
+.due-badge {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  background: #fff3cd;
+  color: #856404;
+  border-radius: 12px;
+}
+
 .project-link {
   color: #667eea;
   text-decoration: none;

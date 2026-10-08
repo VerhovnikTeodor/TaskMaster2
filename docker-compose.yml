@@ -1,6 +1,22 @@
-version: '3.8'
-
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taskmaster
+      POSTGRES_PASSWORD: taskmaster
+      POSTGRES_DB: taskmaster
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskmaster -d taskmaster"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - taskmaster-network
+
   backend:
     build:
       context: ./backend
@@ -11,6 +27,10 @@ services:
       - PORT=8001
       - JWT_SECRET=taskmaster_secret_key_change_this_in_production
       - NODE_ENV=production
+      - DATABASE_URL=postgresql://taskmaster:taskmaster@db:5432/taskmaster
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - taskmaster-network
 
@@ -30,3 +50,6 @@ services:
 networks:
   taskmaster-network:
     driver: bridge
+
+volumes:
+  postgres_data:

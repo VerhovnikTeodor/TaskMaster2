@@ -11,6 +11,7 @@ export interface Task {
   assignedTo: string | null;
   status: TaskStatus;
   priority: TaskPriority;
+  dueDate?: string | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -32,6 +33,7 @@ export interface CreateTaskData {
   projectId: string;
   assignedTo?: string;
   priority?: TaskPriority;
+  dueDate?: string;
 }
 
 export interface UpdateTaskData {
@@ -40,6 +42,7 @@ export interface UpdateTaskData {
   status?: TaskStatus;
   assignedTo?: string;
   priority?: TaskPriority;
+  dueDate?: string | null;
 }
 
 export const taskService = {

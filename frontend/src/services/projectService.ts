@@ -1,5 +1,11 @@
 import api from './api';
-import { User } from './authService';
+
+export interface ProjectMember {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
 
 export interface Project {
   id: string;
@@ -7,6 +13,7 @@ export interface Project {
   description: string;
   ownerId: string;
   members: string[];
+  memberDetails?: ProjectMember[];
   createdAt: string;
   updatedAt: string;
 }

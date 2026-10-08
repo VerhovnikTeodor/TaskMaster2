@@ -4,8 +4,10 @@ module.exports = {
   collectCoverageFrom: [
     'routes/**/*.js',
     'middleware/**/*.js',
+    'data/**/*.js',
     '!node_modules/**'
   ],
   coverageReporters: ['text', 'lcov', 'html'],
-  testMatch: ['**/__tests__/**/*.test.js']
+  testMatch: ['**/__tests__/**/*.test.js'],
+  setupFiles: ['<rootDir>/jest.setup.js']
 };

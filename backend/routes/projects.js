@@ -1,168 +1,182 @@
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
-const { projects, users } = require('../data/store');
+const repo = require('../data/repository');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Vsi route-i zahtevajo avtentikacijo
 router.use(authenticateToken);
 
+async function enrichProject(project) {
+  if (!project) return null;
+  const memberDetails = await repo.getProjectMembers(project.id);
+  return {
+    ...project,
+    memberDetails,
+  };
+}
+
 // Pridobi vse projekte uporabnika
-router.get('/', (req, res) => {
-  const userProjects = projects.filter(p => 
-    p.ownerId === req.user.id || p.members.includes(req.user.id)
-  );
-  
-  res.json(userProjects);
+router.get('/', async (req, res) => {
+  try {
+    const userProjects = await repo.getUserProjects(req.user.id);
+    const enriched = await Promise.all(userProjects.map(enrichProject));
+    res.json(enriched);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Napaka pri pridobivanju projektov' });
+  }
 });
 
 // Pridobi posamezen projekt
-router.get('/:id', (req, res) => {
-  const project = projects.find(p => p.id === req.params.id);
-  
-  if (!project) {
-    return res.status(404).json({ error: 'Projekt ne obstaja' });
-  }
+router.get('/:id', async (req, res) => {
+  try {
+    const project = await repo.findProjectById(req.params.id);
 
-  // Preveri dostop
-  if (project.ownerId !== req.user.id && !project.members.includes(req.user.id)) {
-    return res.status(403).json({ error: 'Nimate dostopa do tega projekta' });
-  }
+    if (!project) {
+      return res.status(404).json({ error: 'Projekt ne obstaja' });
+    }
 
-  res.json(project);
+    if (project.ownerId !== req.user.id && !project.members.includes(req.user.id)) {
+      return res.status(403).json({ error: 'Nimate dostopa do tega projekta' });
+    }
+
+    res.json(await enrichProject(project));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Napaka pri pridobivanju projekta' });
+  }
 });
 
 // Ustvari nov projekt
-router.post('/', (req, res) => {
-  const { name, description } = req.body;
+router.post('/', async (req, res) => {
+  try {
+    const { name, description } = req.body;
 
-  if (!name) {
-    return res.status(400).json({ error: 'Ime projekta je obvezno' });
+    if (!name) {
+      return res.status(400).json({ error: 'Ime projekta je obvezno' });
+    }
+
+    const newProject = await repo.createProject({
+      name,
+      description,
+      ownerId: req.user.id,
+    });
+
+    res.status(201).json(await enrichProject(newProject));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Napaka pri ustvarjanju projekta' });
   }
-
-  const newProject = {
-    id: uuidv4(),
-    name,
-    description: description || '',
-    ownerId: req.user.id,
-    members: [req.user.id],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-
-  projects.push(newProject);
-
-  res.status(201).json(newProject);
 });
 
 // Posodobi projekt
-router.put('/:id', (req, res) => {
-  const project = projects.find(p => p.id === req.params.id);
+router.put('/:id', async (req, res) => {
+  try {
+    const project = await repo.findProjectById(req.params.id);
 
-  if (!project) {
-    return res.status(404).json({ error: 'Projekt ne obstaja' });
+    if (!project) {
+      return res.status(404).json({ error: 'Projekt ne obstaja' });
+    }
+
+    if (project.ownerId !== req.user.id) {
+      return res.status(403).json({ error: 'Samo lastnik lahko ureja projekt' });
+    }
+
+    const { name, description } = req.body;
+    const updated = await repo.updateProject(req.params.id, { name, description });
+    res.json(await enrichProject(updated));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Napaka pri posodobitvi projekta' });
   }
-
-  // Samo lastnik lahko ureja projekt
-  if (project.ownerId !== req.user.id) {
-    return res.status(403).json({ error: 'Samo lastnik lahko ureja projekt' });
-  }
-
-  const { name, description } = req.body;
-
-  if (name) project.name = name;
-  if (description !== undefined) project.description = description;
-  project.updatedAt = new Date().toISOString();
-
-  res.json(project);
 });
 
 // Izbriši projekt
-router.delete('/:id', (req, res) => {
-  const projectIndex = projects.findIndex(p => p.id === req.params.id);
+router.delete('/:id', async (req, res) => {
+  try {
+    const project = await repo.findProjectById(req.params.id);
 
-  if (projectIndex === -1) {
-    return res.status(404).json({ error: 'Projekt ne obstaja' });
+    if (!project) {
+      return res.status(404).json({ error: 'Projekt ne obstaja' });
+    }
+
+    if (project.ownerId !== req.user.id) {
+      return res.status(403).json({ error: 'Samo lastnik lahko izbriše projekt' });
+    }
+
+    await repo.deleteProject(req.params.id);
+    res.json({ message: 'Projekt uspešno izbrisan' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Napaka pri brisanju projekta' });
   }
-
-  const project = projects[projectIndex];
-
-  // Samo lastnik lahko izbriše projekt
-  if (project.ownerId !== req.user.id) {
-    return res.status(403).json({ error: 'Samo lastnik lahko izbriše projekt' });
-  }
-
-  projects.splice(projectIndex, 1);
-
-  res.json({ message: 'Projekt uspešno izbrisan' });
 });
 
 // Dodaj člana v projekt
-router.post('/:id/members', (req, res) => {
-  const project = projects.find(p => p.id === req.params.id);
+router.post('/:id/members', async (req, res) => {
+  try {
+    const project = await repo.findProjectById(req.params.id);
 
-  if (!project) {
-    return res.status(404).json({ error: 'Projekt ne obstaja' });
+    if (!project) {
+      return res.status(404).json({ error: 'Projekt ne obstaja' });
+    }
+
+    if (project.ownerId !== req.user.id) {
+      return res.status(403).json({ error: 'Samo lastnik lahko dodaja člane' });
+    }
+
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'ID uporabnika je obvezen' });
+    }
+
+    const user = await repo.findUserById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Uporabnik ne obstaja' });
+    }
+
+    if (project.members.includes(userId)) {
+      return res.status(400).json({ error: 'Uporabnik je že član projekta' });
+    }
+
+    const updated = await repo.addProjectMember(req.params.id, userId);
+    res.json(await enrichProject(updated));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Napaka pri dodajanju člana' });
   }
-
-  // Samo lastnik lahko dodaja člane
-  if (project.ownerId !== req.user.id) {
-    return res.status(403).json({ error: 'Samo lastnik lahko dodaja člane' });
-  }
-
-  const { userId } = req.body;
-
-  if (!userId) {
-    return res.status(400).json({ error: 'ID uporabnika je obvezen' });
-  }
-
-  // Preveri če uporabnik obstaja
-  const user = users.find(u => u.id === userId);
-  if (!user) {
-    return res.status(404).json({ error: 'Uporabnik ne obstaja' });
-  }
-
-  // Preveri če je uporabnik že član
-  if (project.members.includes(userId)) {
-    return res.status(400).json({ error: 'Uporabnik je že član projekta' });
-  }
-
-  project.members.push(userId);
-  project.updatedAt = new Date().toISOString();
-
-  res.json(project);
 });
 
 // Odstrani člana iz projekta
-router.delete('/:id/members/:userId', (req, res) => {
-  const project = projects.find(p => p.id === req.params.id);
+router.delete('/:id/members/:userId', async (req, res) => {
+  try {
+    const project = await repo.findProjectById(req.params.id);
 
-  if (!project) {
-    return res.status(404).json({ error: 'Projekt ne obstaja' });
+    if (!project) {
+      return res.status(404).json({ error: 'Projekt ne obstaja' });
+    }
+
+    if (project.ownerId !== req.user.id) {
+      return res.status(403).json({ error: 'Samo lastnik lahko odstrani člane' });
+    }
+
+    const { userId } = req.params;
+
+    if (userId === project.ownerId) {
+      return res.status(400).json({ error: 'Ne morete odstraniti lastnika projekta' });
+    }
+
+    if (!project.members.includes(userId)) {
+      return res.status(404).json({ error: 'Uporabnik ni član projekta' });
+    }
+
+    const updated = await repo.removeProjectMember(req.params.id, userId);
+    res.json(await enrichProject(updated));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Napaka pri odstranjevanju člana' });
   }
-
-  // Samo lastnik lahko odstrani člane
-  if (project.ownerId !== req.user.id) {
-    return res.status(403).json({ error: 'Samo lastnik lahko odstrani člane' });
-  }
-
-  const { userId } = req.params;
-
-  // Ne more odstraniti lastnika
-  if (userId === project.ownerId) {
-    return res.status(400).json({ error: 'Ne morete odstraniti lastnika projekta' });
-  }
-
-  const memberIndex = project.members.indexOf(userId);
-  if (memberIndex === -1) {
-    return res.status(404).json({ error: 'Uporabnik ni član projekta' });
-  }
-
-  project.members.splice(memberIndex, 1);
-  project.updatedAt = new Date().toISOString();
-
-  res.json(project);
 });
 
 module.exports = router;
