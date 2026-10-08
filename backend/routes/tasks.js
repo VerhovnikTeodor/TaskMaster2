@@ -1,202 +1,172 @@
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
-const { tasks, projects, users } = require('../data/store');
+const repo = require('../data/repository');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Vsi route-i zahtevajo avtentikacijo
 router.use(authenticateToken);
 
 const TASK_STATUS = {
   TODO: 'TODO',
   IN_PROGRESS: 'IN_PROGRESS',
-  DONE: 'DONE'
+  DONE: 'DONE',
 };
 
-// Pridobi vse naloge za projekt
-router.get('/project/:projectId', (req, res) => {
-  const { projectId } = req.params;
-
-  const project = projects.find(p => p.id === projectId);
-  
+async function ensureProjectAccess(projectId, userId) {
+  const project = await repo.findProjectById(projectId);
   if (!project) {
-    return res.status(404).json({ error: 'Projekt ne obstaja' });
+    return { error: { status: 404, message: 'Projekt ne obstaja' } };
   }
-
-  // Preveri dostop
-  if (project.ownerId !== req.user.id && !project.members.includes(req.user.id)) {
-    return res.status(403).json({ error: 'Nimate dostopa do tega projekta' });
+  if (project.ownerId !== userId && !project.members.includes(userId)) {
+    return { error: { status: 403, message: 'Nimate dostopa do tega projekta' } };
   }
+  return { project };
+}
 
-  const projectTasks = tasks.filter(t => t.projectId === projectId);
-  
-  // Dodaj informacije o dodeljenem uporabniku
-  const tasksWithAssignee = projectTasks.map(task => {
-    if (task.assignedTo) {
-      const assignee = users.find(u => u.id === task.assignedTo);
-      return {
-        ...task,
-        assignee: assignee ? {
-          id: assignee.id,
-          firstName: assignee.firstName,
-          lastName: assignee.lastName,
-          email: assignee.email
-        } : null
-      };
+// Pridobi moje naloge (mora biti pred /:id)
+router.get('/my/tasks', async (req, res) => {
+  try {
+    const myTasks = await repo.getMyTasks(req.user.id);
+    res.json(myTasks);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Napaka pri pridobivanju nalog' });
+  }
+});
+
+// Pridobi vse naloge za projekt
+router.get('/project/:projectId', async (req, res) => {
+  try {
+    const access = await ensureProjectAccess(req.params.projectId, req.user.id);
+    if (access.error) {
+      return res.status(access.error.status).json({ error: access.error.message });
     }
-    return task;
-  });
 
-  res.json(tasksWithAssignee);
+    const projectTasks = await repo.getProjectTasks(req.params.projectId);
+    res.json(projectTasks);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Napaka pri pridobivanju nalog' });
+  }
 });
 
 // Pridobi posamezno nalogo
-router.get('/:id', (req, res) => {
-  const task = tasks.find(t => t.id === req.params.id);
+router.get('/:id', async (req, res) => {
+  try {
+    const task = await repo.findTaskById(req.params.id);
 
-  if (!task) {
-    return res.status(404).json({ error: 'Naloga ne obstaja' });
+    if (!task) {
+      return res.status(404).json({ error: 'Naloga ne obstaja' });
+    }
+
+    const access = await ensureProjectAccess(task.projectId, req.user.id);
+    if (access.error) {
+      return res.status(access.error.status).json({ error: access.error.message });
+    }
+
+    res.json(task);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Napaka pri pridobivanju naloge' });
   }
-
-  const project = projects.find(p => p.id === task.projectId);
-  
-  // Preveri dostop do projekta
-  if (project.ownerId !== req.user.id && !project.members.includes(req.user.id)) {
-    return res.status(403).json({ error: 'Nimate dostopa do te naloge' });
-  }
-
-  // Dodaj informacije o dodeljenem uporabniku
-  if (task.assignedTo) {
-    const assignee = users.find(u => u.id === task.assignedTo);
-    task.assignee = assignee ? {
-      id: assignee.id,
-      firstName: assignee.firstName,
-      lastName: assignee.lastName,
-      email: assignee.email
-    } : null;
-  }
-
-  res.json(task);
 });
 
 // Ustvari novo nalogo
-router.post('/', (req, res) => {
-  const { title, description, projectId, assignedTo, priority } = req.body;
+router.post('/', async (req, res) => {
+  try {
+    const { title, description, projectId, assignedTo, priority, dueDate } = req.body;
 
-  if (!title || !projectId) {
-    return res.status(400).json({ error: 'Naslov in ID projekta sta obvezna' });
+    if (!title || !projectId) {
+      return res.status(400).json({ error: 'Naslov in ID projekta sta obvezna' });
+    }
+
+    const access = await ensureProjectAccess(projectId, req.user.id);
+    if (access.error) {
+      return res.status(access.error.status).json({ error: access.error.message });
+    }
+
+    if (assignedTo && !access.project.members.includes(assignedTo)) {
+      return res.status(400).json({ error: 'Dodeljena oseba mora biti član projekta' });
+    }
+
+    const newTask = await repo.createTask({
+      title,
+      description,
+      projectId,
+      assignedTo,
+      priority,
+      dueDate: dueDate || null,
+      createdBy: req.user.id,
+    });
+
+    res.status(201).json(newTask);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Napaka pri ustvarjanju naloge' });
   }
-
-  const project = projects.find(p => p.id === projectId);
-  
-  if (!project) {
-    return res.status(404).json({ error: 'Projekt ne obstaja' });
-  }
-
-  // Preveri dostop
-  if (project.ownerId !== req.user.id && !project.members.includes(req.user.id)) {
-    return res.status(403).json({ error: 'Nimate dostopa do tega projekta' });
-  }
-
-  // Če je navedena dodeljenja oseba, preveri če je član projekta
-  if (assignedTo && !project.members.includes(assignedTo)) {
-    return res.status(400).json({ error: 'Dodeljena oseba mora biti član projekta' });
-  }
-
-  const newTask = {
-    id: uuidv4(),
-    title,
-    description: description || '',
-    projectId,
-    assignedTo: assignedTo || null,
-    status: TASK_STATUS.TODO,
-    priority: priority || 'medium',
-    createdBy: req.user.id,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-
-  tasks.push(newTask);
-
-  res.status(201).json(newTask);
 });
 
 // Posodobi nalogo
-router.put('/:id', (req, res) => {
-  const task = tasks.find(t => t.id === req.params.id);
+router.put('/:id', async (req, res) => {
+  try {
+    const task = await repo.findTaskById(req.params.id);
 
-  if (!task) {
-    return res.status(404).json({ error: 'Naloga ne obstaja' });
+    if (!task) {
+      return res.status(404).json({ error: 'Naloga ne obstaja' });
+    }
+
+    const access = await ensureProjectAccess(task.projectId, req.user.id);
+    if (access.error) {
+      return res.status(access.error.status).json({ error: access.error.message });
+    }
+
+    const { title, description, status, assignedTo, priority, dueDate } = req.body;
+
+    if (status && !Object.values(TASK_STATUS).includes(status)) {
+      return res.status(400).json({ error: 'Neveljaven status naloge' });
+    }
+
+    if (assignedTo && !access.project.members.includes(assignedTo)) {
+      return res.status(400).json({ error: 'Dodeljena oseba mora biti član projekta' });
+    }
+
+    const updated = await repo.updateTask(req.params.id, {
+      title,
+      description,
+      status,
+      assignedTo,
+      priority,
+      dueDate,
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Napaka pri posodobitvi naloge' });
   }
-
-  const project = projects.find(p => p.id === task.projectId);
-  
-  // Preveri dostop
-  if (project.ownerId !== req.user.id && !project.members.includes(req.user.id)) {
-    return res.status(403).json({ error: 'Nimate dostopa do te naloge' });
-  }
-
-  const { title, description, status, assignedTo, priority } = req.body;
-
-  // Preveri status
-  if (status && !Object.values(TASK_STATUS).includes(status)) {
-    return res.status(400).json({ error: 'Neveljaven status naloge' });
-  }
-
-  // Če je navedena dodeljenja oseba, preveri če je član projekta
-  if (assignedTo && !project.members.includes(assignedTo)) {
-    return res.status(400).json({ error: 'Dodeljena oseba mora biti član projekta' });
-  }
-
-  if (title) task.title = title;
-  if (description !== undefined) task.description = description;
-  if (status) task.status = status;
-  if (assignedTo !== undefined) task.assignedTo = assignedTo;
-  if (priority) task.priority = priority;
-  task.updatedAt = new Date().toISOString();
-
-  res.json(task);
 });
 
 // Izbriši nalogo
-router.delete('/:id', (req, res) => {
-  const taskIndex = tasks.findIndex(t => t.id === req.params.id);
+router.delete('/:id', async (req, res) => {
+  try {
+    const task = await repo.findTaskById(req.params.id);
 
-  if (taskIndex === -1) {
-    return res.status(404).json({ error: 'Naloga ne obstaja' });
+    if (!task) {
+      return res.status(404).json({ error: 'Naloga ne obstaja' });
+    }
+
+    const project = await repo.findProjectById(task.projectId);
+
+    if (project.ownerId !== req.user.id && task.createdBy !== req.user.id) {
+      return res.status(403).json({ error: 'Nimate dovoljenja za brisanje te naloge' });
+    }
+
+    await repo.deleteTask(req.params.id);
+    res.json({ message: 'Naloga uspešno izbrisana' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Napaka pri brisanju naloge' });
   }
-
-  const task = tasks[taskIndex];
-  const project = projects.find(p => p.id === task.projectId);
-  
-  // Samo lastnik projekta ali ustvarjalec naloge lahko izbriše nalogo
-  if (project.ownerId !== req.user.id && task.createdBy !== req.user.id) {
-    return res.status(403).json({ error: 'Nimate dovoljenja za brisanje te naloge' });
-  }
-
-  tasks.splice(taskIndex, 1);
-
-  res.json({ message: 'Naloga uspešno izbrisana' });
-});
-
-// Pridobi moje naloge
-router.get('/my/tasks', (req, res) => {
-  const myTasks = tasks.filter(t => t.assignedTo === req.user.id);
-  
-  // Dodaj informacije o projektu
-  const tasksWithProject = myTasks.map(task => {
-    const project = projects.find(p => p.id === task.projectId);
-    return {
-      ...task,
-      project: project ? {
-        id: project.id,
-        name: project.name
-      } : null
-    };
-  });
-
-  res.json(tasksWithProject);
 });
 
 module.exports = router;

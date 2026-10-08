@@ -123,6 +123,11 @@ const Tasks: React.FC = () => {
                   >
                     {task.priority}
                   </span>
+                  {task.dueDate && (
+                    <span className="due-badge">
+                      📅 {new Date(task.dueDate).toLocaleDateString('sl-SI')}
+                    </span>
+                  )}
                   {task.project && (
                     <Link 
                       to={`/projects/${task.project.id}`}

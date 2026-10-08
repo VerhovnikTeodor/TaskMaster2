@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { projectService, Project } from '../services/projectService';
+import { projectService, Project, ProjectMember } from '../services/projectService';
 import { taskService, Task, TaskStatus } from '../services/taskService';
+import { userService } from '../services/userService';
+import { User } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import Comments from '../components/Comments';
 import '../styles/ProjectDetail.css';
@@ -10,14 +12,17 @@ const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [selectedMemberId, setSelectedMemberId] = useState('');
   const [selectedTaskForComments, setSelectedTaskForComments] = useState<string | null>(null);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
     priority: 'medium' as 'low' | 'medium' | 'high',
-    assignedTo: ''
+    assignedTo: '',
+    dueDate: ''
   });
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -30,12 +35,14 @@ const ProjectDetail: React.FC = () => {
 
   const fetchProjectData = async () => {
     try {
-      const [projectData, tasksData] = await Promise.all([
+      const [projectData, tasksData, usersData] = await Promise.all([
         projectService.getProject(id!),
-        taskService.getProjectTasks(id!)
+        taskService.getProjectTasks(id!),
+        userService.getUsers()
       ]);
       setProject(projectData);
       setTasks(tasksData);
+      setAllUsers(usersData);
     } catch (err) {
       alert('Napaka pri nalaganju projekta');
       navigate('/projects');
@@ -50,13 +57,39 @@ const ProjectDetail: React.FC = () => {
       await taskService.createTask({
         ...newTask,
         projectId: id!,
-        assignedTo: newTask.assignedTo || undefined
+        assignedTo: newTask.assignedTo || undefined,
+        dueDate: newTask.dueDate || undefined
       });
       setShowTaskModal(false);
-      setNewTask({ title: '', description: '', priority: 'medium', assignedTo: '' });
+      setNewTask({ title: '', description: '', priority: 'medium', assignedTo: '', dueDate: '' });
       fetchProjectData();
     } catch (err: any) {
       alert(err.response?.data?.error || 'Napaka pri ustvarjanju naloge');
+    }
+  };
+
+  const handleAddMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedMemberId || !id) return;
+
+    try {
+      const updated = await projectService.addMember(id, selectedMemberId);
+      setProject(updated);
+      setSelectedMemberId('');
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Napaka pri dodajanju člana');
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!id) return;
+    if (!window.confirm('Ali ste prepričani, da želite odstraniti tega člana?')) return;
+
+    try {
+      const updated = await projectService.removeMember(id, memberId);
+      setProject(updated);
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Napaka pri odstranjevanju člana');
     }
   };
 
@@ -102,6 +135,18 @@ const ProjectDetail: React.FC = () => {
     return colors[priority] || '#6c757d';
   };
 
+  const isOverdue = (dueDate?: string | null) => {
+    if (!dueDate) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return new Date(dueDate) < today;
+  };
+
+  const formatDueDate = (dueDate?: string | null) => {
+    if (!dueDate) return null;
+    return new Date(dueDate).toLocaleDateString('sl-SI');
+  };
+
   if (loading) {
     return <div className="page-container"><p>Nalaganje...</p></div>;
   }
@@ -111,6 +156,10 @@ const ProjectDetail: React.FC = () => {
   }
 
   const isOwner = project.ownerId === user?.id;
+  const members: ProjectMember[] = project.memberDetails || [];
+  const availableUsers = allUsers.filter(
+    (u) => !project.members.includes(u.id)
+  );
 
   return (
     <div className="page-container">
@@ -141,6 +190,58 @@ const ProjectDetail: React.FC = () => {
         </div>
       </div>
 
+      <section className="members-section">
+        <h2>Člani projekta</h2>
+        <ul className="members-list">
+          {members.map((member) => (
+            <li key={member.id} className="member-item">
+              <div>
+                <strong>{member.firstName} {member.lastName}</strong>
+                <span className="member-email">{member.email}</span>
+                {member.id === project.ownerId && (
+                  <span className="owner-chip">Lastnik</span>
+                )}
+              </div>
+              {isOwner && member.id !== project.ownerId && (
+                <button
+                  onClick={() => handleRemoveMember(member.id)}
+                  className="btn btn-xs btn-danger"
+                >
+                  Odstrani
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        {isOwner && (
+          <form onSubmit={handleAddMember} className="add-member-form">
+            <select
+              value={selectedMemberId}
+              onChange={(e) => setSelectedMemberId(e.target.value)}
+              required
+            >
+              <option value="">Izberi uporabnika...</option>
+              {availableUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.firstName} {u.lastName} ({u.email})
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={!selectedMemberId || availableUsers.length === 0}
+            >
+              Dodaj člana
+            </button>
+          </form>
+        )}
+        {isOwner && availableUsers.length === 0 && (
+          <p className="hint-text">Vsi registrirani uporabniki so že člani tega projekta.</p>
+        )}
+      </section>
+
       <div className="kanban-board">
         {(['TODO', 'IN_PROGRESS', 'DONE'] as TaskStatus[]).map(status => (
           <div key={status} className="kanban-column">
@@ -153,7 +254,7 @@ const ProjectDetail: React.FC = () => {
                 <div key={task.id} className="task-card">
                   <div className="task-header">
                     <h4>{task.title}</h4>
-                    <span 
+                    <span
                       className="priority-badge"
                       style={{ backgroundColor: getPriorityColor(task.priority) }}
                     >
@@ -166,6 +267,12 @@ const ProjectDetail: React.FC = () => {
                   {task.assignee && (
                     <div className="task-assignee">
                       👤 {task.assignee.firstName} {task.assignee.lastName}
+                    </div>
+                  )}
+                  {task.dueDate && (
+                    <div className={`task-due ${isOverdue(task.dueDate) && status !== 'DONE' ? 'overdue' : ''}`}>
+                      📅 Rok: {formatDueDate(task.dueDate)}
+                      {isOverdue(task.dueDate) && status !== 'DONE' ? ' (zapadel)' : ''}
                     </div>
                   )}
                   <div className="task-actions">
@@ -252,14 +359,28 @@ const ProjectDetail: React.FC = () => {
                 </select>
               </div>
               <div className="form-group">
-                <label htmlFor="assignedTo">Dodeli uporabniku (ID)</label>
+                <label htmlFor="dueDate">Rok</label>
                 <input
-                  type="text"
+                  type="date"
+                  id="dueDate"
+                  value={newTask.dueDate}
+                  onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="assignedTo">Dodeli članu</label>
+                <select
                   id="assignedTo"
                   value={newTask.assignedTo}
                   onChange={(e) => setNewTask({ ...newTask, assignedTo: e.target.value })}
-                  placeholder="Neobvezno - ID uporabnika"
-                />
+                >
+                  <option value="">Brez dodelitve</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.firstName} {member.lastName} ({member.email})
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="modal-actions">
                 <button type="button" onClick={() => setShowTaskModal(false)} className="btn btn-secondary">

@@ -151,3 +151,86 @@
 .btn-comment:hover {
   background: #5568d3;
 }
+
+.members-section {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.members-section h2 {
+  margin: 0 0 15px;
+  font-size: 18px;
+  color: #333;
+}
+
+.members-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.member-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.member-email {
+  display: block;
+  font-size: 13px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.owner-chip {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #667eea;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.add-member-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.add-member-form select {
+  flex: 1;
+  min-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.hint-text {
+  margin: 8px 0 0;
+  color: #666;
+  font-size: 13px;
+}
+
+.task-due {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.task-due.overdue {
+  color: #dc3545;
+  font-weight: 600;
+}

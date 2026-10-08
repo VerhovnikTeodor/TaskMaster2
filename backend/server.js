@@ -18,16 +18,16 @@ const commentRoutes = require('./routes/comments');
 
 // Osnovni route
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Dobrodošli na TaskMaster API',
-    version: '1.0.0',
+    version: '1.1.0',
     endpoints: {
       auth: '/api/auth',
       projects: '/api/projects',
       tasks: '/api/tasks',
       dashboard: '/api/dashboard',
-      comments: '/api/comments'
-    }
+      comments: '/api/comments',
+    },
   });
 });
 
@@ -49,6 +49,23 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint ne obstaja' });
 });
 
-app.listen(PORT, () => {
-  console.log(`TaskMaster strežnik teče na portu ${PORT}`);
+async function start() {
+  if (process.env.DATABASE_URL && process.env.USE_MEMORY_STORE !== 'true') {
+    const { waitForDb, initDb } = require('./data/db');
+    await waitForDb();
+    await initDb();
+  } else {
+    console.log('Uporabljam in-memory shrambo (brez PostgreSQL)');
+  }
+
+  app.listen(PORT, () => {
+    console.log(`TaskMaster streznik tece na portu ${PORT}`);
+  });
+}
+
+start().catch((err) => {
+  console.error('Zagon strežnika ni uspel:', err);
+  process.exit(1);
 });
+
+module.exports = app;
